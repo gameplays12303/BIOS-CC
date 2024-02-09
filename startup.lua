@@ -1,12 +1,3 @@
-if {...}[1] == "reset"
-then
-    settings.set("customBoot",true)
-    settings.save()
-end
-if not settings.get("customBoot",true)
-then
-    error("disabed by system run startup 'reset' ",0)
-end
 do
     local args = {...}
     if args[1] == true
