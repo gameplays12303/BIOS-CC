@@ -1,0 +1,63 @@
+Info:Thu Jan  2 14:04:29 2025:starting logging
+Info:Thu Jan  2 14:04:29 2025:loading color api and GUI
+Info:Thu Jan  2 14:04:29 2025:api load request: @bios : rom/apis/colors.lua 
+Info:Thu Jan  2 14:04:29 2025:loadfile request: @bios: rom/apis/colors.lua
+Info:Thu Jan  2 14:04:29 2025:exe request: rom/apis/colors.lua: rom/modules/main/cc/expect.lua
+Info:Thu Jan  2 14:04:29 2025:loadfile request: @bios: rom/modules/main/cc/expect.lua
+Info:Thu Jan  2 14:04:29 2025:successfully loaded rom/apis/colors.lua:API
+Info:Thu Jan  2 14:04:29 2025:loadfile request: bios/modules/mRequire.lua: bios/modules/GUI/GUI.lua
+Info:Thu Jan  2 14:04:29 2025:loadfile request: bios/modules/mRequire.lua: bios/modules/GUI/fileselect.lua
+Info:Thu Jan  2 14:04:29 2025:loadfile request: bios/modules/mRequire.lua: bios/modules/fm.lua
+Info:Thu Jan  2 14:04:29 2025:loading icon
+Info:Thu Jan  2 14:04:29 2025:icon loaded
+Info:Thu Jan  2 14:04:29 2025:loading remaining apis
+Info:Thu Jan  2 14:04:29 2025:api load request: @bios : rom/apis/parallel.lua 
+Info:Thu Jan  2 14:04:29 2025:loadfile request: @bios: rom/apis/parallel.lua
+Info:Thu Jan  2 14:04:29 2025:successfully loaded rom/apis/parallel.lua:API
+Info:Thu Jan  2 14:04:29 2025:api load request: @bios : rom/apis/fs.lua 
+Info:Thu Jan  2 14:04:29 2025:loadfile request: @bios: rom/apis/fs.lua
+Info:Thu Jan  2 14:04:29 2025:exe request: rom/apis/fs.lua: rom/modules/main/cc/expect.lua
+Info:Thu Jan  2 14:04:29 2025:loadfile request: @bios: rom/modules/main/cc/expect.lua
+Info:Thu Jan  2 14:04:29 2025:successfully loaded rom/apis/fs.lua:API
+Info:Thu Jan  2 14:04:29 2025:api load request: @bios : rom/apis/keys.lua 
+Info:Thu Jan  2 14:04:29 2025:loadfile request: @bios: rom/apis/keys.lua
+Info:Thu Jan  2 14:04:29 2025:successfully loaded rom/apis/keys.lua:API
+Info:Thu Jan  2 14:04:39 2025:exe request: @bios: bios/apis/BiosFile_protect.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/apis/BiosFile_protect.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: bios/modules/mRequire.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: bios/modules/mRequire.lua: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: OS/system/kernel/kernel.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: OS/system/kernel/kernel.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: OS/system/kernel/kernel.lua: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/utilties.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: OS/system/kernel/kernel.lua: BIOS/modules/fm.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: BIOS/modules/fm.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: BIOS/modules/fm.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: BIOS/modules/fm.lua: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/utilties.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: os_entry: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/utilties.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: os_entry: bios/modules/GUI/GUI.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/GUI/GUI.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/GUI/GUI.lua: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/utilties.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/GUI/GUI.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/GUI/GUI.lua: bios/modules/GUI/fileselect.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/GUI/fileselect.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/GUI/fileselect.lua: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/utilties.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/utilties.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:exe request: bios/modules/GUI/fileselect.lua: bios/modules/expect2.lua
+Info:Thu Jan  2 14:04:39 2025:loadfile request: @bios: bios/modules/expect2.lua
