@@ -1,3 +1,6 @@
+-- UnBIOS by JackMacWindows
+-- modifed by wendell_parham for BIOS-CC needs 
+
 assert(debug,"requires debug")
 
 ---checks to see if a table is selfReferencing
