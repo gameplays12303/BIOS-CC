@@ -1,3 +1,7 @@
+-- Modified from original GeneralModules, licensed under MIT
+-- These modifications were made by [Your Name or Organization] for the project
+-- For full license information, see LICENSE file in the modules directory.
+
 local util = require and require("modules.utilties") or BIOS.dofile("bios/modules/utilties.lua")
 local expect_table = require and require("modules.expect2") or BIOS.dofile("bios/modules/expect2.lua")
 local expectValue = expect_table.expectValue
