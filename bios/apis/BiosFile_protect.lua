@@ -1,6 +1,6 @@
 local expect = (require and require("bios.modules.expect2") or BIOS.dofile("bios/modules/expect2.lua")).expect
 local util = require and require("bios.modules.utilties") or BIOS.dofile("bios/modules/utilties.lua")
-local nativeFs = util.Table.copy(fs)
+local nativeFs = util.table.copy(fs)
 fs.delete = function (sPath)
     expect(false,1,sPath,"string")
     if sPath == ".settings" or string.find(string.sub(sPath,4),"bios")
@@ -66,7 +66,6 @@ fs.attributes = function (sPath)
        attributes.isReadOnly = true
     end
     return attributes
-    
 end
 fs.open = function (sPath,mode)
     expect(false,1,sPath,"string")

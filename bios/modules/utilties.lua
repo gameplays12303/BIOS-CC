@@ -1,8 +1,11 @@
+-- Modified from original GeneralModules, licensed under MIT
+-- These modifications were made by [Your Name or Organization] for the project
+-- For full license information, see LICENSE file in the modules directory.
+
 -- general purpose code 
 -- this code dose not have a decated purpose
 -- it is just simple code that i would use multipul times 
-
-local expect = expect or (require and require("modules.expect2") or BIOS.dofile("bios/modules/expect2.lua"))
+local expect = expect or (require and require("bios.modules.expect2") or BIOS.dofile("bios/modules/expect2.lua"))
 local blacklist = expect.blacklist
 local field = expect.field
 ---@diagnostic disable-next-line: cast-local-type
@@ -11,10 +14,10 @@ local fs,string,table = fs,string,table
 local setmetatable = setmetatable
 local getmetatable = getmetatable
 local utilties = {}
-utilties.String = {}
-utilties.Table = {}
-utilties.File = {}
-utilties.Color = {}
+utilties.string = {}
+utilties.table = {}
+utilties.file = {}
+utilties.color = {}
 -- strings addons 
 
 ---splits a string input no sep value nor _bkeepdelimiters to get a list of chars
@@ -22,39 +25,41 @@ utilties.Color = {}
 ---@param sep string|nil
 ---@param _bkeepdelimiters boolean|nil
 ---@return table
-function utilties.String.split(inputstr, sep,_bkeepdelimiters)
+---@return integer|nil
+function utilties.string.split(inputstr, sep,_bkeepdelimiters)
       expect(false,1,inputstr,"string")
       expect(false,2,sep,"string","nil")
       expect(false,3,_bkeepdelimiters,"boolean","nil")
       local t={}
       if not sep
       then
-            for char in inputstr:gmatch(".") do
-                  table.insert(t, char) end
+            for char in string.gmatch(inputstr,".") do
+                  table.insert(t, char) 
+            end
             return t
       end
       if not _bkeepdelimiters
       then
+            local total_segments = 0
             for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
                   table.insert(t, str)
             end
-            return t
+            return t,total_segments
       end
       for str in string.gmatch(inputstr,"[^"..sep.."]*"..sep.."?") do
             table.insert(t, str)
       end
-      t[#t] = nil
       return t
 end
 ---preps a string for the window
----@param termnial_size number
+---@param terminal_size number
 ---@param _sMessage string
 ---@param CursorPosX number|nil
-function utilties.String.wrap(terminal_size,_sMessage,CursorPosX)
+function utilties.string.wrap(terminal_size,_sMessage,CursorPosX)
       expect(false,1,terminal_size,"number")
       expect(false,2,_sMessage,"string")
       CursorPosX = expect(false,3,CursorPosX,"number","nil") or 0
-      local words = utilties.String.split(_sMessage," ",true)
+      local words = utilties.string.split(_sMessage," ",true)
       local result,size = "",0
       while #words > 0 do
             local CurrentWord = table.remove(words,1)
@@ -80,55 +85,94 @@ function utilties.String.wrap(terminal_size,_sMessage,CursorPosX)
 end
 ---custom built Serializer design to handle selfReferencing tables and functions (using string.dump)
 ---@param _data any
----@param _Index any
+---@param dump_fn boolean|nil
+---@param _Index number|nil
 ---@return string|unknown
-function utilties.String.Serialize(_data,_Index)
-      blacklist(false,1,_data,"thread","userdata")
-      _Index =  expect(false,2,_Index,"number","nil") or 0
-      local indexGag = ("\t"):rep(_Index)
+function utilties.string.Serialize(_data,dump_fn,_Index)
+      expect(false,2,dump_fn,"boolean","nil")
+      _Index =  expect(false,3,_Index,"number","nil") or 0
       local actions = {
-            ["boolean"] = function ()
-                  return tostring(_data)
+            ["boolean"] = function (value)
+                  return tostring(value)
             end,
-            ["string"] = function ()
-                  return "\"".._data.."\""
+            ["string"] = function (value)
+                  return "\""..value.."\""
             end,
-            ["table"] = function ()
-                  local result = "{\n"
-                  for i,v in pairs(_data) do
-                        if type(v) ~= "table"
-                        then
-                              if type(i) == "string"
-                              then
-                                    if string.find(i,"%p") ~= nil
-                                    then
-                                          result = result.."\t"..indexGag..("[\"%s\"] = "):format(i)..utilties.String.Serialize(v,_Index+1)..",\n"
-                                    else
-                                          result = result.."\t"..indexGag..("%s = "):format(i)..utilties.String.Serialize(v,_Index+1)..",\n"
-                                    end
-                              else
-                                    result = result.."\t"..indexGag..utilties.String.Serialize(v,_Index+1)..",\n"
-                              end
-                        end
-                  end
-                  return result..indexGag.."}"
-            end,
-            ["function"] = function ()
-                  return string.dump(_data)
-            end
       }
+      actions["function"] = function (value)
+            if dump_fn
+            then
+                  local bool,ret = pcall(string.dump,value)
+                  if bool
+                  then
+                        return ret
+                  end
+            end
+            return actions["string"](tostring(value))
+      end
       actions["number"] = actions["boolean"]
+      actions["thread"] = actions["boolean"]
+      actions["userData"] = actions["boolean"]
+      actions["table"] = function ()
+            local result = "{\n"
+            local seen = {}
+            local Current = {depth = 1,value = _data,key = nil,Parent = nil}
+            while Current do
+                  local k,v = next(Current.value,Current.key)
+                  Current.key = k
+                  seen[Current.value] = true
+                  if k == nil and v == nil
+                  then
+                        Current = Current.Parent
+                        if not Current
+                        then
+                              result = result.."}"
+                              break
+                        end
+                        result = result..("\t"):rep(Current.depth).."},\n"
+                  end
+                  local equalPattern
+                  if type(k) == "string" and string.find(k,"%p")
+                  then
+                        equalPattern = ("[\"%s\"] = "):format(tostring(k))
+                  elseif type(k) == "string" and not string.match(k,"^%s*$")
+                  then
+                        equalPattern = ("%s = "):format(tostring(k))
+                  else
+                        equalPattern = ""
+                  end
+                  if type(v) == "table"
+                  then
+                        if not seen[v]
+                        then
+                              result = result..("\t"):rep(Current.depth)..equalPattern.."{\n"
+                              local newCurrent = {depth = Current.depth+1,value = v,key = nil,Parent = Current}
+                              Current = newCurrent
+                        else
+                              if equalPattern == " = " == nil
+                              then
+                                    equalPattern = ""
+                              end
+                              result = result..("\t"):rep(Current.depth)..equalPattern..("%s,\n"):format(actions["string"](tostring(v)))
+                        end
+                  elseif v ~= nil
+                  then
+                        result = result..("\t"):rep(Current.depth)..equalPattern..actions[type(v)](v)..",\n"
+                  end
+            end
+            return result
+      end
       local action = actions[type(_data)]
-      return action and action() or error(("unknown type %s"):format(type(_data)),2)
+      return action and action() or ("unhandled type %s"):format(type(_data))
 end
 ---custom text loader 
 ---@param _sData string
 ---@return unknown
-function utilties.String.UnSerialize(_sData,_env,name)
+function utilties.string.UnSerialize(_sData,_env,name)
       expect(false,1, _sData, "string")
       expect(false,2,_env,"table","nil")
       expect(false,3,name,"string","nil")
-      local func,err = BIOS.load("return " .. _sData,("unserialize %s"):format(name or ""),"t",_env)
+      local func,err = BIOS.load("return " .. _sData,name or "data","t",_env or setmetatable({},{__index = _G}))
       if func then
             local ok, result = pcall(func)
             if ok then
@@ -142,7 +186,7 @@ end
 ---gets the created date
 ---@param sPath string
 ---@return number
-function utilties.File.created(sPath)
+function utilties.file.created(sPath)
       expect(false,1,sPath,"string")
       return fs.attributes(sPath).created
 end
@@ -150,31 +194,31 @@ end
 ---gets the modified date
 ---@param sPath string
 ---@return number
-function utilties.File.modified(sPath)
+function utilties.file.modified(sPath)
       expect(false,1,sPath,"string")
       return fs.attributes(sPath).modified
 end
 ---gets the extension type (.lua)
 ---@param _sfile string
 ---@return string
-function utilties.File.getExtension(_sfile)
+function utilties.file.getExtension(_sfile)
       expect(false,1,_sfile,"string")
-      local Table = utilties.String.split(_sfile,"%.",true)
+      local Table = utilties.string.split(_sfile,"%.",true)
       return Table[2]
 end
 ---gets the root (eg. C:/, Root)
 ---@param _sPath string
 ---@return string
-function utilties.File.getRoot(_sPath)
+function utilties.file.getRoot(_sPath)
       expect(false,1,_sPath,"string")
-      return utilties.String.split(_sPath,"/")[1]
+      return utilties.string.split(_sPath,"/")[1]
 end
 ---gets the name but leaves out the extension
 ---@param _sfile string
 ---@return string
-function utilties.File.withoutExtension(_sfile)
+function utilties.file.withoutExtension(_sfile)
       expect(false,1,_sfile,"string")
-      local Table = utilties.String.split(_sfile,"%.")
+      local Table = utilties.string.split(_sfile,"%.")
       return Table[1]
 end
 
@@ -185,7 +229,7 @@ end
 ---@param showRootDir boolean|nil
 ---@param showRom boolean|nil
 ---@return table
-function utilties.File.listsubs(sPath,showFiles,showDirs,showRootDir,showRom)
+function utilties.file.listsubs(sPath,showFiles,showDirs,showRootDir,showRom)
       expect(false,1,sPath,"string")
       expect(false,2,showFiles,"boolean","nil")
       expect(false,3,showDirs,"boolean","nil")
@@ -201,7 +245,7 @@ function utilties.File.listsubs(sPath,showFiles,showDirs,showRootDir,showRom)
       local Table = fs.find(sPath.."/*")
       if not showRom
       then
-            local ID = utilties.Table.find(Table,"rom")
+            local ID = utilties.table.find(Table,"rom")
             if ID
             then
                   table.remove(Table,ID)
@@ -242,7 +286,7 @@ end
 ---@param showFiles boolean|nil
 ---@param showDirs boolean|nil
 ---@return table
-function utilties.File.list(sPath,showFiles,showDirs,showPath)
+function utilties.file.list(sPath,showFiles,showDirs,showPath)
       expect(false,1,sPath,"string")
       expect(false,2,showFiles,"boolean","nil")
       expect(false,3,showDirs,"boolean","nil")
@@ -277,7 +321,7 @@ end
 ---wrapps the directory so ".." equals ""
 ---@param path string
 ---@return string
-function utilties.File.getDir(path)
+function utilties.file.getDir(path)
       expect(false,1,path,"string")
       if fs.getDir(path) == ".."
       then
@@ -290,7 +334,7 @@ end
 ---test if a number is a color
 ---@param color number
 ---@return boolean
-function utilties.Color.isColor(color)
+function utilties.color.isColor(color)
       expect(false,1,color,"number")
       for i,v in pairs(colors) do
             if v == color
@@ -307,103 +351,86 @@ end
 ---@param ID any
 ---@param strict boolean|nil
 ---@return string|number|boolean
-function utilties.Table.find(base,ID,strict)
+function utilties.table.find(base,ID,strict)
       expect(false,1,base,"table")
       for i,v in pairs(base) do
-            if type(v) == "string" and type(ID) == "string"
+            if type(v) == "string" and type(ID) == "string" and not strict and string.find(ID,i)
             then
-                  if not strict and string.find(ID,i)
-                  then
-                        return i
-                  elseif v == ID
-                  then
-                        return i
-                  end
-            elseif v == ID
+                  return i
+            end
+            if v == ID
             then
                   return i
             end
       end
       return false
 end
-
 ---checks to see if a table is selfReferencing
 ---@param base table
 ---@return boolean
-function utilties.Table.selfReferencing(base,Topions)
+function utilties.table.selfReferencing(base,Topions)
       expect(false, 1, base, "table")
       Topions = expect(false,2,Topions,"table","nil") or {}
-      if Topions.checkMetatables ~= false
-      then
-            Topions.checkMetatables = true
-      end 
-      if Topions.bIndex ~= false
-      then
-            Topions.bIndex = true
-      end
-      if Topions.bnewIndex ~= false
-      then
-            Topions.bnewIndex = true
-      end
+      Topions.bmetaData = field(1,Topions,"bmetaData","boolean","nil") or true
+      Topions.bIndex = field(1,Topions,"bIndex","boolean","nil") or true
+      Topions.bnewIndex = field(1,Topions,"bnewIndex","boolean","nil") or true
       local stack = {{base, select(2, pcall(getmetatable, base))}}
       local seen = {}
       local firstLoop = true
       while true do
-            local current = table.remove(stack)
-            if not current then
-                  break
-            end
-            local tbl, mt = current[1], current[2]
-            if tbl == base and not firstLoop then
+      local current = table.remove(stack)
+      if not current then
+            break
+      end
+      local tbl, mt = current[1], current[2]
+      if tbl == base and not firstLoop then
+            return true
+      end
+      seen[tbl] = true
+      -- Iterate through the current table's values
+      for _, v in pairs(tbl) do
+            if v == base then
                   return true
             end
-            seen[tbl] = true
-            -- Iterate through the current table's values
-            for _, v in pairs(tbl) do
-                  if v == base then
-                        return true
-                  end
-                  if type(v) == "table" and not seen[v] then
-                        table.insert(stack, {v, select(2, pcall(getmetatable, v))})
-                  end
+            if type(v) == "table" and not seen[v] then
+                  table.insert(stack, {v, select(2, pcall(getmetatable, v))})
             end
-            -- Check the metatable's __index field if it's a table
-            if type(mt) == "table" and Topions.checkMetatables then
-                  local meta_index = mt.__index
-                  if type(meta_index) == "table" and not seen[meta_index] and Topions.bIndex  then
-                        table.insert(stack, {meta_index, select(2, pcall(getmetatable, meta_index))})
-                  end
-                  local meta_newindex = mt.__newindex
-                  if type(meta_newindex) == "table" and not seen[meta_newindex] and Topions.bnewIndex then
-                        table.insert(stack,{meta_newindex, select(2, pcall(getmetatable, meta_newindex))})
-                  end
+      end
+      -- Check the metatable's __index field if it's a table
+      if type(mt) == "table" then
+            local meta_index = mt.__index
+            if type(meta_index) == "table" and not seen[meta_index] and Topions.bIndex  then
+                  table.insert(stack, {meta_index, select(2, pcall(getmetatable, meta_index))})
             end
-            firstLoop = false
+            local meta_newindex = mt.__newindex
+            if type(meta_newindex) == "table" and not seen[meta_newindex] and Topions.bnewIndex then
+                  table.insert(stack,{meta_newindex, select(2, pcall(getmetatable, meta_newindex))})
+            end
+      end
+      firstLoop = false
       end
       return false
 end
-
-
 ---creates a true copy (with the option to include the meta table)
 ---@param Copy_Tbl table
 ---@param copymetatable boolean|nil
 ---@return table
-function utilties.Table.copy(Copy_Tbl,copymetatable)
+function utilties.table.copy(Copy_Tbl,copymetatable)
       expect(false,1,Copy_Tbl,"table")
       expect(false,2,copymetatable,"boolean","nil")
       local proxy = {}
       for index,v in pairs(Copy_Tbl) do
-            if type(v) == "table" and not utilties.Table.selfReferencing(v)
+            if type(v) == "table" and utilties.table.selfReferencing(v)
             then
-                  proxy[index] = utilties.Table.copy(v,copymetatable)
+                  proxy[index] = utilties.table.copy(v,copymetatable)
             else
                   proxy[index] = v
             end
       end
-      local bool,result = pcall(getmetatable,Copy_Tbl)
+      local bool,reuslt = pcall(getmetatable,Copy_Tbl)
       if bool and copymetatable
       then
-            setmetatable(proxy,result)
+            setmetatable(proxy,reuslt)
       end
       return proxy
 end
@@ -412,7 +439,7 @@ end
 ---@param base table
 ---@param _nTransfer number
 ---@return table
-function utilties.Table.transfer(base,_nTransfer)
+function utilties.table.transfer(base,_nTransfer)
       expect(false,1,base,"table")
       expect(false,2,_nTransfer,"number")
       local CIndex = 1
@@ -427,53 +454,68 @@ end
 ---replaces the table type with the class type
 ---@param self table
 ---@return string
-function utilties.Table.tostring(self)
-      local bool,meta = pcall(getmetatable,self)
-      if not bool or not meta
+function utilties.table.tostring(self)
+      local name = utilties.table.getName(self)
+      if name
       then
-            return ("%s: (%s)"):format(utilties.getType(self),utilties.get_hash(self))
+            return ("%s:%s:(%s)"):format(utilties.table.getType(self),name,utilties.table.get_hash(self))
+      else
+            return ("%s:(%s)"):format(utilties.table.getType(self),utilties.table.get_hash(self))
       end
-      if not meta.hash
-      then
-            return meta.__name
-      end
-      return ("%s: (%s)"):format(meta._name,meta.hash)
 end
+
 ---sets the table class type
 ---@param Tbl table
 ---@param Type string
 ---@param keepHash boolean|nil
 ---@return table
-function utilties.Table.setType(Tbl,Type,keepHash)
+function utilties.table.setUp(Tbl,Type,keepHash,newname)
       expect(false,1,Tbl,"table")
       expect(false,2,Type,"string")
+      expect(false,3,newname,"string","nil")
       local bool,meta = pcall(getmetatable,Tbl)
       if not bool or not meta
       then
             meta = {}
       end
-      meta.__name = Type
+      meta.type = Type
+      meta.__name = newname
       if keepHash or keepHash == nil
       then
-            meta.hash = utilties.Table.get_hash(Tbl)
+            meta.hash = utilties.table.get_hash(Tbl)
       end
-      meta.__tostring = utilties.Table.tostring
+      meta.__tostring = utilties.table.tostring
       return setmetatable(Tbl,meta)
 end
----returns the class type
+
+---returns the object name 
 ---@param Tbl table
 ---@return string
-function utilties.Table.getType(Tbl)
+function utilties.table.getName(Tbl)
       expect(false,1,Tbl,"table")
       local meta = getmetatable(Tbl) or {}
-      return meta.__name or "table"
+      return meta.__name
 end
+
+---returns the object type
+---@param Tbl table
+---@return string
+function utilties.table.getType(Tbl)
+      expect(false,1,Tbl,"table")
+      local meta = getmetatable(Tbl) or {}
+      return meta.type or "table"
+end
+
 ---returns the hash
 ---@param Tbl table
 ---@return string
-function utilties.Table.get_hash(Tbl)
+function utilties.table.get_hash(Tbl)
       expect(false,1,Tbl,"table")
       local meta = getmetatable(Tbl) or {}
-      return meta.hash or tostring(Tbl):match("table: (%x+)")
+      if meta.__tostring == utilties.table.tostring and not meta.hash
+      then
+            meta.__tostring = nil
+      end
+      return meta.hash or tostring(Tbl):match("table: (%x+)") or ""
 end
 return utilties

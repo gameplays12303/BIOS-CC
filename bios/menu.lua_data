@@ -17,26 +17,16 @@
     ["select_default_program"] = function ()
         local fileselect = require("GUI.fileselect")
         local centerX,centerY = GUI:getCenter()
-        local newParent = GUI:create(centerX-15,centerY-6,35,10,true)
+        local newParent = GUI:create(centerX-21,centerY-6,42,10,true)
         local fileInfo
         local fm = require("fm")
-        local file = fileselect(newParent,"","choose boot_record",true,false,"boot_record")
-        if not file
+        local file_path = fileselect(newParent,"","choose program",true,false,"kern")
+        if not file_path
         then
-            return
-        end
-        fileInfo = fm.readFile(file)
-        if not fileInfo
-        then
-            newParent:make_textBox(true)
-            newParent:setBackgroundColor(colors.gray)
-            newParent:setBackgroundColor(colors.red)
-            newParent:write("no config info")
-            BIOS.pullEventRaw("key")
             return
         end
         local settings = fs.exists(".settings") and fm.readFile(".settings") or {}
-        settings.default_OS = file
+        settings.default_OS = file_path
         fm.OverWrite(".settings",settings)
     end,
     ["disable_bios"] = function ()

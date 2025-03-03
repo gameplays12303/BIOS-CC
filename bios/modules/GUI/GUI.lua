@@ -1,3 +1,7 @@
+-- Modified from original GeneralModules, licensed under MIT
+-- These modifications were made by [Your Name or Organization] for the project
+-- For full license information, see LICENSE file in the modules directory.
+
 ---@diagnostic disable: duplicate-set-field
 
 ---@diagnostic disable-next-line: undefined-field
@@ -12,11 +16,11 @@ expect = expect.expect
 
 local terminal_data = getmetatable(native)
 ---@diagnostic disable-next-line: param-type-mismatch
-native = util.Table.copy(native)
+native = util.table.copy(native)
 local GUI
 ---@diagnostic disable-next-line: param-type-mismatch
 local function isColor(color)
-    if not util.Color.isColor(color)
+    if not util.color.isColor(color)
     then
         error(("%s: invalid color"):format(color),3)
     end
@@ -24,7 +28,7 @@ end
 
 local function restorePallet(terminal)
     for i,v in pairs(terminal.color.palette) do
-        if util.Color.isColor(i)
+        if util.color.isColor(i)
         then
             native.setPaletteColor(i,table.unpack(v))
         end
@@ -32,7 +36,7 @@ local function restorePallet(terminal)
 end
 
 ---@class terminal
-local terminal = setmetatable({},{__disabledSetMeta = true})
+local terminal = {}
 
 -- this is a custom terminal and will return a termnial
 setmetatable(native,{__index = GUI})
@@ -44,7 +48,7 @@ GUI = setmetatable({
         height = select(2,native.getSize())
     },
     pixels = {},
-    color = {back = colors.white,palette = util.Table.setType({},"palette")},
+    color = {back = colors.white,palette = util.table.setUp({},"palette")},
     upDating = true,
     children = setmetatable({},{__mode = "v"})
 },{__index = terminal})
@@ -53,7 +57,7 @@ function GUI.getSize()
 end
 function GUI.setNatvieTable(Tbl)
     expect(true,1,Tbl,"table","monitor")
-    native = util.Table.copy(Tbl)
+    native = util.table.copy(Tbl)
     GUI.terminal.height = select(2,native.getSize())
     GUI.terminal.width = select(1,native.getSize())
 end
@@ -68,7 +72,7 @@ function GUI.isUpDating()
 end
 
 --- builds a terminal to draw to
-util.Table.setType(GUI,"terminal")
+util.table.setUp(GUI,"terminal")
 
 -- this creates a new instance of the Parent terminal and then stores the new terminazl as a child in the Parent
 -- the child table is a weak table meaning when you close the textBox the garbage will clean it out
@@ -98,8 +102,8 @@ function terminal:create(positionX,positionY,nWidth,nHeight,Visible)
         end
         range(1,positionX,1,Parent_X)
         range(2,positionY,1,Parent_Y)
-        range(3,nWidth,1,Parent_X)
-        range(4,nHeight,1,Parent_Y)
+        range(3,nWidth,1,nWidth)
+        range(4,nHeight,1,nHeight)
     end
     local Parent = self
     instance = setmetatable({
@@ -109,11 +113,11 @@ function terminal:create(positionX,positionY,nWidth,nHeight,Visible)
             width = nWidth,
             height = nHeight,
         },
-        color = {back = colors.white,palette = util.Table.copy(Parent.color.palette,true)},
+        color = {back = colors.white,palette = util.table.copy(Parent.color.palette,true)},
         upDating = Visible or false,
         children = setmetatable({},{__mode = "v"})
     },{__index = terminal})
-    util.Table.setType(instance,"terminal")
+    util.table.setUp(instance,"terminal")
     table.insert(self.children,instance)
     --- moves the window  you cannot resize the window (security limitation)
     function instance:reposition(new_x,new_y,new_Parent)
@@ -137,7 +141,7 @@ function terminal:create(positionX,positionY,nWidth,nHeight,Visible)
         instance.window.y = new_y
         if new_Parent
         then
-            Parent.children[select(2,util.Table.find(Parent.children,instance))] = nil
+            Parent.children[select(2,util.table.find(Parent.children,instance))] = nil
             Parent = new_Parent
             table.insert(Parent.children,instance)
         end
@@ -263,7 +267,7 @@ end
 
 do -- just prepares the Parent for use
     for _,v in pairs(colors) do
-        if type(v) == "number" and util.Color.isColor(v)
+        if type(v) == "number" and util.color.isColor(v)
         then
             GUI:setPaletteColor(v,native.getPaletteColor(v))
         end
@@ -279,7 +283,7 @@ function terminal:makeCanv()
     self.pixels = {}
     self.children = nil
     setmetatable(self,{__index = canvas})
-    util.Table.setType(self,"canvas")
+    util.table.setUp(self,"canvas")
 end
 
 do -- canvases functions
@@ -298,7 +302,7 @@ do -- canvases functions
             error(("%s:not found"):format(sImage_file),3)
         end
         local result = {image = {{}},Size = {x= 0, y= 0}}
-        local ext = util.File.getExtension(sImage_file)
+        local ext = util.file.getExtension(sImage_file)
         if ext ~= "nfp"
         then
             error("unknown file expected nfp",2)
@@ -348,7 +352,7 @@ do -- canvases functions
         end
     end
     function canvas:saveImage(sImage_file)
-        local file,err = fs.open(util.File.withoutExtension(sImage_file)..".CImage","w")
+        local file,err = fs.open(util.file.withoutExtension(sImage_file)..".CImage","w")
         local result = ""
         if not file
         then
@@ -447,7 +451,7 @@ function terminal:make_textBox(AutoWrap,tab_spaces)
         meta.__index = textBox
         setmetatable(self,meta)
     end
-    util.Table.setType(self,"textBox")
+    util.table.setUp(self,"textBox")
     self.Offset = {}
     self.Offset.x = 0
     self.Offset.y = 0
@@ -673,14 +677,11 @@ end
 ---@return integer|nil
 ---@return integer|nil
 function textBox:write(sText,bOverWrite,keepPos)
-    expect(true,0,self,"textBox")
-    expect(false,1,sText,"string")
-    expect(false,2,bOverWrite,"boolean","nil")
     local windowlengh,windowDepth = self:getSize()
     local CursorPosX,CursorPosY = self:getCursorPos()
     local flagLines = false
     do  -- main draw handler
-        local result = util.String.split(sText)
+        local result = util.string.split(sText)
         --- writes the sentece to the table
         -- one charator at a time
         local offsetX,offsetY = self:getOffset()
@@ -870,7 +871,7 @@ function textBox:getCurrentLine(manual_offsetY)
     local _,offsetY = self:getOffset()
     local CursorPosY = select(2,self:getCursorPos())
     local Chartemp = self.lines[manual_offsetY+offsetY+CursorPosY]
-    return Chartemp and util.Table.copy(Chartemp) or nil
+    return Chartemp and util.table.copy(Chartemp) or nil
 end
 
 --[[
@@ -1044,9 +1045,9 @@ function terminal:make_button(bToggle,_bRawImage)
         self.active_window.window = self.window
     end
     setmetatable(self,{__index = button})
-    util.Table.setType(self,"button")
-    util.Table.setType(self.active_window,"Sub_Window")
-    util.Table.setType(self.default_window,"Sub_Window")
+    util.table.setUp(self,"button")
+    util.table.setUp(self.active_window,"Sub_Window")
+    util.table.setUp(self.default_window,"Sub_Window")
     return self.ID
 end
 
@@ -1153,7 +1154,7 @@ function button:redraw()
     then
         local isActive = self:isActive()
         local window = self
-        if util.Table.getType(self) ~= "Sub_Window"
+        if util.table.getType(self) ~= "Sub_Window"
         then
             if isActive
             then
@@ -1257,7 +1258,7 @@ function terminal:make_progressBar(_nCheckpoints)
     self.color.filled = colors.blue
     self:setBackgroundColor(colors.green)
     setmetatable(self,{__index = progress_bar})
-    util.Table.setType(self,"progress_bar")
+    util.table.setUp(self,"progress_bar")
 end
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 --[[
@@ -1335,7 +1336,7 @@ function terminal:Chat_Box(sContent,TblSettings)
     local function getLastword()
         local line = chatBox:getSentence()
         ---@diagnostic disable-next-line: cast-local-type
-        local words = util.String.split(line," ")
+        local words = util.string.split(line," ")
         return words[#words]
     end
 
@@ -1376,7 +1377,7 @@ function terminal:Chat_Box(sContent,TblSettings)
         chatBox:setBackgroundColor(TblSettings.default_BackgroundColor)
         chatBox:clear()
         chatBox:upDate(false)
-        local letters = util.String.split(sContent)
+        local letters = util.string.split(sContent)
         for _,v in pairs(letters) do
             if string.match(v,"%s")
             then
@@ -1465,7 +1466,7 @@ function terminal:Chat_Box(sContent,TblSettings)
         then
             Pos = 0
         end
-        currentSel = table.concat(util.String.split(autoList[Pos]),nil,2)
+        currentSel = table.concat(util.string.split(autoList[Pos]),nil,2)
         reDraw()
     end
     local keyMap = {
@@ -1807,7 +1808,7 @@ function terminal:Chat_Box(sContent,TblSettings)
             then
                 return
             end
-            local letters = util.String.split(stri)
+            local letters = util.string.split(stri)
             for _,v in pairs(letters) do
                 if v:match("%s")
                 then
@@ -1921,7 +1922,7 @@ function textBox:Chat_Prompt(message,TblSettings)
     end
     if self:is_wrapped()
     then
-        message = util.String.wrap(select(1,self:getSize()),message)
+        message = util.string.wrap(select(1,self:getSize()),message)
     end
     message = message..(TblSettings.prompt_on_newLine and "\n" or "")
     self:clear()
@@ -1931,7 +1932,7 @@ function textBox:Chat_Prompt(message,TblSettings)
     local autoList = {}
     local sContent
     local end_CursorPosX,end_CursorPosY
-    local message_chunks = util.String.split(message,"\n") -- used to manage each line independently 
+    local message_chunks = util.string.split(message,"\n") -- used to manage each line independently 
     local message_chunks_depth = 1
     for _,_ in string.gmatch(message,"\n") do
         message_chunks_depth = message_chunks_depth + 1
@@ -1949,7 +1950,7 @@ function textBox:Chat_Prompt(message,TblSettings)
             end
         end
         ---@diagnostic disable-next-line: cast-local-type
-        local words = util.String.split(Current_line," ")
+        local words = util.string.split(Current_line," ")
         return words[#words] or ""
     end
     local function getAutoList()
@@ -1964,7 +1965,7 @@ function textBox:Chat_Prompt(message,TblSettings)
         end
         autoList = nil -- clear out the last list 
         -- Split the word by dots into a hierarchy
-        local hierarchy = util.String.split(getLastword(),"%.")
+        local hierarchy = util.string.split(getLastword(),"%.")
         local currentTable = TblSettings.AutoComplete
         local boolNoMatch = false
     
@@ -2005,7 +2006,7 @@ function textBox:Chat_Prompt(message,TblSettings)
     local predefined_sentences = {}
     if TblSettings.predefined_sentences
     then
-        predefined_sentences = util.Table.copy(TblSettings.predefined_sentences)
+        predefined_sentences = util.table.copy(TblSettings.predefined_sentences)
         for i,v in pairs(predefined_sentences) do
             local bool = pcall(expect,false,0,v,"string")
             if not bool
@@ -2085,7 +2086,7 @@ function textBox:Chat_Prompt(message,TblSettings)
         then
             return
         end
-        currentSel = table.concat(util.String.split(autoList[Pos]),nil,2)
+        currentSel = table.concat(util.string.split(autoList[Pos]),nil,2)
         reDraw()
     end
     local keyMap = {
@@ -2445,7 +2446,7 @@ then
         if type(argus[1]) ~= "table"
         then
             error(("expected table got %s"):format(type(argus[1])))
-        elseif type(argus[1]) == "table" and util.Table.getType(argus[1]) ~= "button"
+        elseif type(argus[1]) == "table" and util.table.getType(argus[1]) ~= "button"
         then
             buttons = argus[1]
         else
@@ -2697,8 +2698,8 @@ function terminal:run_list(option_list,TblSettings)
     if otpLen > 1 and GUI.buttonRun
     then
         Prompt = self:create(2,1,termSizeX-1,1)
-        left = self:create(1,1,1,1,true)
-        right = self:create(termSizeX,1,1,1,true)
+        left = self:create(1,1,3,1,true)
+        right = self:create(termSizeX-2,1,3,1,true)
         left:make_button(false)
         right:make_button(false)
         left.active_window:setTextColor(TblSettings.select_option_textColor)

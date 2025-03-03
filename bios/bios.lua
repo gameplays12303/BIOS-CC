@@ -153,13 +153,7 @@ hardWare.load = load
 hardWare.loadstring = loadstring
 _G.load = nil
 _G.loadstring = nil
-do -- sets up required basic functions 
-    local native_getmetatable = getmetatable
-    function BIOS.makeEnv(env)
-        env._ENV = env
-        local meta = native_getmetatable(env) or {}
-        env._G = meta.__index
-    end
+do -- sets up required basic functions
     if tonumber(string.sub(_VERSION,4)) <= 5.1
     then
         ---@diagnostic disable-next-line: duplicate-set-field
@@ -173,7 +167,7 @@ do -- sets up required basic functions
                     local result, err = hardWare.loadstring(x, name)
                     if result then
                         if env then
-                            BIOS.makeEnv(env)
+                            env._ENV = env
                             setfenv(result,env)
                         end
                         return result
@@ -184,7 +178,7 @@ do -- sets up required basic functions
                     local result, err = hardWare.load(x, name)
                     if result then
                         if env then
-                            BIOS.makeEnv(env)
+                            env._ENV = env
                             setfenv(result,env)
                         end
                         return result
@@ -295,6 +289,7 @@ do -- sets up required basic functions
     ---runs a file
     ---@param sPath string
     ---@param _Env table|nil
+    ---@diagnostic disable-next-line: duplicate-set-field
     BIOS.dofile = function (sPath,_Env)
         expect(false,1,sPath,"string")
         expect(false,2,_Env,"table","nil")
@@ -331,7 +326,7 @@ BIOS.pullEvent = function (sfilter)
     local results = table.pack(coroutine.yield(sfilter))
     if results[1] == "Terminate"
     then
-        _G.error("terminated",0)
+        error("terminated",0)
     end
     return table.unpack(results)
 end
@@ -349,7 +344,7 @@ BIOS.sleep = function (t)
 end
 local original
 do-- makes the loadapi Envirement blueprint table
-    local os = util.Table.copy(hardWare)
+    local os = util.table.copy(hardWare)
     for i,v in pairs(BIOS) do
         os[i] = v
     end
@@ -362,13 +357,18 @@ end
 ---@diagnostic disable-next-line: duplicate-set-field
 function BIOS.loadAPI(sPath)
     expect(false,1,sPath,"string")
-    sPath = util.File.withoutExtension(sPath)..".lua"
+    sPath = util.file.withoutExtension(sPath)..".lua"
     if logFile
     then
         local info = getNearestValidFile()
-        logFile:Info(("api load request: %s : %s "):format((info.source and info.source ~= "=[C]" and info.source) or info.name or info.namewhat ,sPath))
+        if info 
+        then
+            logFile:Info(("api load request: %s : %s "):format((info.source and info.source ~= "=[C]" and info.source) or info.name or info.namewhat ,sPath))
+        else
+            logFile:Info(("api load request: %s"):format(sPath))
+        end
     end
-    local _tEnv = util.Table.copy(original,true)
+    local _tEnv = util.table.copy(original,true)
     local mess
     local fn
     fn,mess = BIOS.loadfile(sPath,"bt",_tEnv)
@@ -390,7 +390,7 @@ function BIOS.loadAPI(sPath)
         end
         return false,result[2]
     end
-    local name = util.File.withoutExtension(fs.getName(sPath))
+    local name = util.file.withoutExtension(fs.getName(sPath))
     _G[name] = {}
     if result[2] and type(result[2]) == "table"
     then
@@ -402,7 +402,7 @@ function BIOS.loadAPI(sPath)
         return false,mess
     end
     for i,v in pairs(_tEnv) do
-        if not util.Table.find(original,v)
+        if not util.table.find(original,v)
         then
             _G[name][i] = v
         end
@@ -419,7 +419,7 @@ then
 end
 BIOS.dofile("bios/apis/Tbl_protect.lua") -- loads up table protect system
 
-_ENV.mRequire = BIOS.dofile("bios/modules/mRequire.lua")
+_ENV.mRequire = BIOS.dofile("bios/modules/mRequire.lua",_ENV)
 if mRequire
 then
     mRequire.Path.Add("bios")
@@ -463,7 +463,7 @@ local fileselect = require("GUI.fileselect")
 GUI:setBackgroundColor(colors.black)
 
 local fm = require("fm",_ENV)
-
+local bugCheck
 do -- wraps the _Env Errorhandler (this will one will not only draw it to the screen but log it)
     ---@type function
     local reboot = hardWare.reboot
@@ -474,12 +474,12 @@ do -- wraps the _Env Errorhandler (this will one will not only draw it to the sc
     ---@param sMessage string
     ---@param nlevel number|nil
     ---@diagnostic disable-next-line: duplicate-set-field
-    _ENV.error = function (sMessage,nlevel)
+    bugCheck = function (sMessage,nlevel)
         expect(false,1,sMessage,"string")
         expect(false,2,nlevel,"number","nil")
         if nlevel and nlevel ~= 0
         then
-            nlevel = nlevel + 1
+            nlevel = nlevel + 2
         elseif nlevel == nil
         then
             nlevel = 3
@@ -496,9 +496,12 @@ do -- wraps the _Env Errorhandler (this will one will not only draw it to the sc
         ErrorScreen:write("press key to reboot")
         coroutine.yield("key")
         reboot()
+        while true do
+            coroutine.yield()
+        end
     end
 end
-
+_ENV.bugCheck = bugCheck
 
 local messageScreen
 do -- builds a message screen
@@ -578,7 +581,7 @@ then
         logFile:Warn("no Os selected; entering menu")
     elseif not fs.exists(config.default_OS)
     then
-        logMessage("OS not installed")
+        logMessage(("OS not installed;%s"):format(fs.getName(config.default_OS)))
         logFile:Warn(("%s:not installed; entering boot_menu"):format(config.default_OS))
     else
         ---@type string
@@ -594,11 +597,8 @@ end
 -- time to load up some old but critical CraftOS apis
 logFile:Info("loading remaining apis")
 BIOS.loadAPI("rom/apis/parallel")
-if fs.exists("rom/apis/fs.lua")
-then
-    BIOS.loadAPI("rom/apis/fs")
-end
 BIOS.loadAPI("rom/apis/keys")
+logFile:Info("all apis loaded")
 
 --- time to load the configuration if their is one
 local program,mess
@@ -614,17 +614,17 @@ else
     local key = {
         [keys.f5] = function ()
             local file
-            file,mess = BIOS.loadfile("bios/menu.lua","bt",_ENV)
+            file,mess = BIOS.loadfile("bios/menu.lua","bt",setmetatable({require = require,BIOS = BIOS,GUI = GUI},{__index = _G}))
             if not file
             then
                 ---@diagnostic disable-next-line: param-type-mismatch
-                error(mess,0)
+                bugCheck(mess,0)
             end
             ---@diagnostic disable-next-line: param-type-mismatch
             local result = table.pack(pcall(file))
             if not result
             then
-                error(result[2],0)
+                bugCheck(result[2],0)
             end
             return result[2]
         end,
@@ -632,7 +632,7 @@ else
             local fileParent = GUI:create(1,1,GUI:getSize())
             fileParent:upDate(true)
             local option = fileselect(fileParent,"","choose OS",true,false,"boot_record")
-            default_OS = option
+            default_OS = option or default_OS
         end
     }
     parallel.waitForAny(function ()
@@ -674,7 +674,7 @@ then
     local bool,reboot = pcall(program)
     if not bool
     then
-        error(reboot,0)
+        bugCheck(reboot,0)
     end
     if reboot
     then
@@ -685,62 +685,26 @@ then
     end
 end
 
-
-_G.error = nativeError
 BIOS.dofile("bios/apis/BiosFile_protect.lua",_ENV)
 
 -- loads up the choosen OS (will shutdown if the OS fails to load)
-local kernel_environment,kernel_error,kernel_location
-do -- sets up kernel_environment
-    local OSConfig = fm.readFile(default_OS)
-    kernel_environment = OSConfig.kernel_environment
-    if not kernel_environment
-    then
-        error("missing kernel_environment",0)
-    end
-    setmetatable(kernel_environment,{__index = _G})
-    kernel_environment.BIOS = BIOS
-    kernel_environment.hardWare = hardWare
-    kernel_error = OSConfig.kernel_error
-    kernel_location = OSConfig.kernel
-end
-
-local kernel_error_fn,kernel_fn
-if kernel_error
-then
-    kernel_error_fn,mess = BIOS.loadfile(kernel_error,"bt",kernel_environment)
-    if not kernel_error_fn
-    then
-        logFile:Warn(mess)
-    else
-        kernel_environment.error = kernel_error_fn
-    end
-end
-if not kernel_location
-then
-    error(("no kernel location %s"):format(default_OS),0)
-end
-kernel_fn,mess = BIOS.loadfile(kernel_location,"bt",kernel_environment)
+local kernel_environment = setmetatable({BIOS = BIOS,hardWare = hardWare,error = nativeError},{__index = _G})
+local kernel_fn
+kernel_fn,mess = BIOS.loadfile(default_OS,"bt",kernel_environment)
 if kernel_fn == false or kernel_fn == nil
 then
-    logFile:Fatal("kernel:"..mess)
-    if kernel_error_fn
-    then
-        kernel_error_fn(mess,1)
-    else
-        ---@diagnostic disable-next-line: param-type-mismatch
-        error(mess,2)
-    end
+    bugCheck("kernelError:"..mess,0)
 end
-kernel_error = nil
-kernel_location = nil
-default_OS = nil
-config = nil
+_G.error = nativeError
 ---@diagnostic disable-next-line: param-type-mismatch
-local results = table.pack(pcall(kernel_fn))
-if not results[1]
+local bool,err = pcall(kernel_fn)
+if not bool
 then
-    error(results[2],0)
+    if kernel_environment.PANIC
+    then
+        kernel_environment.PANIC(err or "unknown fault system Crash")
+    end
+    bugCheck(err or "unknown fault system Crash",0)
 end
 logFile:close()
 hardWare.shutdown()

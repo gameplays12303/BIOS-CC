@@ -4,7 +4,7 @@ local expectValue = expect_table.expectValue
 local expect = expect_table.expect
 -- time to add some new features
 ---@diagnostic disable:redundant-parameter,duplicate-set-field
-local Tbl = util.Table.copy(table)
+local Tbl = util.table.copy(table)
 local metaTable = {getmetatable = getmetatable,setmetatable = setmetatable}
 local nativeRawSet = rawset
 local function hasAccess(metaData)
@@ -52,7 +52,7 @@ end
 _G.getmetatable = function (Table)
     expect(false,1,Table,"table")
     local meta = metaTable.getmetatable(Table) or {}
-    if (meta.__disabledGetMeta) and not hasAccess(meta)
+    if (meta.__ProtectMeta) and not hasAccess(meta)
     then
         error("access_denied",2)
     end
@@ -62,24 +62,13 @@ _G.setmetatable = function (Table,_metaTable)
     expect(false,1,Table,"table")
     expect(false,2,_metaTable,"table","nil")
     local meta = metaTable.getmetatable(Table) or {}
-    if meta.__disabledSetMeta and not hasAccess(meta)
+    if meta.__ProtectMeta and not hasAccess(meta)
     then
         error("permission denied",2)
     end
     return metaTable.setmetatable(Table,_metaTable)
 end
-_G.DisabledSetMeta = function (Table,...)
-    expect(false,1,Table,"table")
-    local tmp = {...}
-    for i,v in pairs(tmp) do
-        expect(false,i+1,v,"function","table")
-    end
-    local meta = metaTable.getmetatable(Table) or {}
-    meta.__disabledSetMeta = true
-    meta.access = tmp
-    metaTable.setmetatable(Table,meta)
-end
-_G.DisabledGetMeta = function (Table,...)
+_G.ProtectMeta = function (Table,...)
     expect(false,1,Table,"table")
     local tmp = {...}
     for i,v in pairs(tmp) do
@@ -89,7 +78,7 @@ _G.DisabledGetMeta = function (Table,...)
         end
     end
     local meta = metaTable.getmetatable(Table) or {}
-    meta.__disabledGetMeta = true
+    meta.__ProtectMeta = true
     meta.access = tmp
     return metaTable.setmetatable(Table,meta)
 end
@@ -209,14 +198,13 @@ table.setReadOnly = function (_tlist,...)
     meta.__ipairs = __ipairs
     local proxy = metaTable.setmetatable({},meta)
     do
-        local Type = util.Table.getType(_tlist)
+        local Type = util.table.getType(_tlist)
         if Type ~= "table"
         then
-            util.Table.setUp(proxy,Type)
+            util.table.setUp(proxy,Type)
         end
     end
-    DisabledGetMeta(proxy,...)
-    DisabledSetMeta(proxy,...)
+    ProtectMeta(proxy,...)
     return  proxy
 end
 
@@ -284,8 +272,7 @@ if debug and debug.protect
 then
     debug.protect(getmetatable)
     debug.protect(setmetatable)
-    debug.protect(DisabledGetMeta)
-    debug.protect(DisabledSetMeta)
+    debug.protect(ProtectMeta)
     debug.protect(rawset)
     debug.protect(BIOS.load)
     debug.protect(BIOS.loadstring)

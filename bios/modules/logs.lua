@@ -1,5 +1,9 @@
 
-local fm = require("modules.fm")
+-- Modified from original GeneralModules, licensed under MIT
+-- These modifications were made by [Your Name or Organization] for the project
+-- For full license information, see LICENSE file in the modules directory.
+
+local fm = require and require("modules.fm") or BIOS.dofile("bios/modules/fm.lua")
 local expect = require and require("modules.expect2") or BIOS.dofile("bios/modules/expect2.lua")
 ---@diagnostic disable-next-line: cast-local-type
 expect = expect.expect
@@ -22,7 +26,7 @@ function handle:Open_Dir(_sDir,limit)
         directory = _sDir,
         limit = limit
     },{__index = handle})
-    util.Table.setType(Dir,"logDir")
+    util.table.setUp(Dir,"logDir")
     return Dir
 end
 function handle:Open_Log(_sName)
@@ -52,25 +56,25 @@ function handle:Open_Log(_sName)
             end
             if info.count > 0
             then
-                path = fs.combine(self.directory,util.File.withoutExtension(fs.getName(_sName))..("(%s).log"):format(info.count))
+                path = fs.combine(self.directory,util.file.withoutExtension(fs.getName(_sName))..("(%s).log"):format(info.count))
             else
-                path = fs.combine(self.directory,util.File.withoutExtension(fs.getName(_sName))..".log")
+                path = fs.combine(self.directory,util.file.withoutExtension(fs.getName(_sName))..".log")
             end
         else
             info.created = info.created + 1
             if info.created > 1
             then
-                path = fs.combine(self.directory,util.File.withoutExtension(fs.getName(_sName))..("(%s).log"):format(info.created))
+                path = fs.combine(self.directory,util.file.withoutExtension(fs.getName(_sName))..("(%s).log"):format(info.created))
             else
-                path = fs.combine(self.directory,util.File.withoutExtension(fs.getName(_sName))..".log")
+                path = fs.combine(self.directory,util.file.withoutExtension(fs.getName(_sName))..".log")
             end
         end
     else
         local count = 0
-        path = fs.combine(self.directory,util.File.withoutExtension(fs.getName(_sName))..".log")
+        path = fs.combine(self.directory,util.file.withoutExtension(fs.getName(_sName))..".log")
         repeat
             count = count + 1
-            path = fs.combine(self.directory,util.File.withoutExtension(fs.getName(_sName))..("(%s).log"):format(count))
+            path = fs.combine(self.directory,util.file.withoutExtension(fs.getName(_sName))..("(%s).log"):format(count))
         until not fs.exists(path)
     end
     local file,err = fs.open(path,"w")
@@ -83,7 +87,7 @@ function handle:Open_Log(_sName)
         file = file,
         closed = false,
     },{__index = handle})
-    util.Table.setType(logFile,("logFile"):format(_sName))
+    util.table.setUp(logFile,("logFile"):format(_sName))
     return logFile
 end
 ---comment

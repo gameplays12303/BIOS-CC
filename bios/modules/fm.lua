@@ -1,3 +1,7 @@
+-- Modified from original GeneralModules, licensed under MIT
+-- These modifications were made by [Your Name or Organization] for the project
+-- For full license information, see LICENSE file in the modules directory.
+
 -- this is just a module to lower the ammount of code to be written
 -- if you need specific handling or are going to be writing to the file
 -- multipule times this is not the handle you want to use
@@ -31,7 +35,7 @@ function fm.OverWrite(sPath,data,mode)
     then
         file.write(data)
     else
-        file.write(util.String.Serialize(data))
+        file.write(util.string.Serialize(data))
     end
     file.close()
     return true
@@ -50,7 +54,7 @@ function fm.readFile(sPath,mode)
         error("Invalid mode",2)
     end
     if not exists(sPath) then
-        error("Invalid path "..sPath.." dose not exist",0)
+        error("Invalid path "..sPath.." dose not exist",2)
     end
     local file,mess = open(sPath,"r")
     if file == nil then
@@ -61,7 +65,7 @@ function fm.readFile(sPath,mode)
     then
         data = file.readAll()
     else
-        data = util.String.UnSerialize(file.readAll())
+        data = util.string.UnSerialize(file.readAll())
     end
     file.close()
     return data

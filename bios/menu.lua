@@ -21,7 +21,7 @@ local menu_list,run = nil,true
 do --- loads up the menu options
     local menu_chunk = fm.readFile("bios/menu.lua_data","R") -- gets the avaible options
     ---@diagnostic disable-next-line: param-type-mismatch
-    menu_list = util.String.UnSerialize(menu_chunk,_ENV,"menu.lua_data")
+    menu_list = util.string.UnSerialize(menu_chunk,_ENV,"menu.lua_data")
     menu_list["exit"] = function ()
         run = false
     end

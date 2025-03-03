@@ -1,3 +1,7 @@
+-- Modified from original GeneralModules, licensed under MIT
+-- These modifications were made by [Your Name or Organization] for the project
+-- For full license information, see LICENSE file in the modules directory.
+
 local util = require and require("modules.utilties") or BIOS.dofile("bios/modules/utilties.lua")
 local expect = (require and require("modules.expect2") or BIOS.dofile("bios/modules/expect2.lua")).expect
 
@@ -50,9 +54,9 @@ return function (terminal,_sStartDir,message,AcceptFiles,AccpetDirs,file_type)
     local dir = _sStartDir
     while true do
         local list = {}
-        for _,v in pairs(util.File.list(dir,AcceptFiles,true,true)) do
-            local ext = util.File.getExtension(v)
-            if (ext == nil and fs.isDir(v)) or file_type == nil
+        for _,v in pairs(util.file.list(dir,AcceptFiles,true,true)) do
+            local ext = util.file.getExtension(v)
+            if fs.isDir(v) or file_type == nil
             then
                 table.insert(list,fs.getName(v))
             elseif ext == file_type
@@ -68,7 +72,7 @@ return function (terminal,_sStartDir,message,AcceptFiles,AccpetDirs,file_type)
         terminal:reset()
         local fileselected
         do
-            local choice = terminal:run_list(list,{message = ("CurrentDir:%s:%s"):format(dir,message)})
+            local choice = terminal:run_list(list,{message = ("Dir:%s:%s"):format(fs.getName(dir),message)})
             fileselected = list[choice]
         end
 
@@ -101,7 +105,7 @@ return function (terminal,_sStartDir,message,AcceptFiles,AccpetDirs,file_type)
                dir = Path
             end
         else
-            dir = util.File.getDir(dir)
+            dir = util.file.getDir(dir)
         end
     end
     return nil

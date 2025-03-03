@@ -1,3 +1,6 @@
+-- Modified from original GeneralModules, licensed under MIT
+-- These modifications were made by [Your Name or Organization] for the project
+-- For full license information, see LICENSE file in the modules directory.
 
 local handle = {}
 local function listerror(tbl)
@@ -23,7 +26,7 @@ local function getType(var,btrue)
         then
             return false
         end
-        return info[2] and info[2].__name or "table"
+        return info[2] and info[2].type or "table"
     elseif type(var) == "table"
     then
         return "table"

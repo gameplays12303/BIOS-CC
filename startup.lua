@@ -42,7 +42,7 @@ function selfReferencing(base)
     return false
 end
 
-
+local load = load
 ---custom built Serialiser design to handle selfReferencing tables and functions (using string.dump)
 ---@param _data any
 ---@param _Index any
@@ -109,6 +109,7 @@ end
 local open = fs.open
 local exists = fs.exists
 local fm = {}
+local term = term
 ---wrapped file writer
 ---@param sPath string
 ---@param data any
@@ -164,7 +165,7 @@ function fm.readFile(sPath,mode)
 end
 do
     local args = {...}
-    if args[1] == true
+    if args[1] == "true"
     then
         settings.set("customBoot",true)
     end
@@ -289,18 +290,30 @@ function _G.term.native()
     then
         setfenv(fn,Env)
     end
+    local reboot = os.reboot
     local oldshutdown = os.shutdown
     os.shutdown = function()
-
         local info = fs.exists(".settings") and fm.readFile(".settings") or {}
         os.shutdown = oldshutdown
         ---@diagnostic disable-next-line: param-type-mismatch
-        local bool = pcall(bios)
+        local bool,message = pcall(bios)
         if not bool and info.bios_update and fs.exists("restore_point.old_bios")
         then
             local restore_data = fm.readFile("restore_point.old_bios")
             for _,v in pairs(restore_data) do
                 fm.OverWrite(v.path,v.fn,"r")
+            end
+        elseif not bool
+        then
+            term.setTextColor(16384)
+            term.write(message)
+            local config = fm.readFile(".settings")
+            config.customBoot = false
+            fm.OverWrite(".settings",config)
+            coroutine.yield("key")
+            reboot()
+            while true do
+                coroutine.yield()
             end
         end
     end

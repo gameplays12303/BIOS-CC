@@ -1,3 +1,7 @@
+-- Modified from original GeneralModules, licensed under MIT
+-- These modifications were made by [Your Name or Organization] for the project
+-- For full license information, see LICENSE file in the modules directory.
+
 
 -- this is degined to replace the require API so modules can be reloaded as needed
 -- this module minics the require system in that once loaded it simply just calleds the module once more
@@ -8,7 +12,7 @@ local util = require and require("modules.utilties") or BIOS.dofile("bios/module
 ---@diagnostic disable-next-line: cast-local-type
 expect = expect.expect
 local handle = {path = {}}
-handle.Path = {Paths = util.File.list("rom/modules",false,true,true)}
+handle.Path = {Paths = util.file.list("rom/modules",false,true,true)}
 table.insert(handle.Path.Paths,"")
 handle.loaded = {}
 -- adds a LoadPath to the loadPaths Table
@@ -37,23 +41,12 @@ end
 ---@return boolean
 function handle.Path.Remove(_sPath)
     expect(false,1,_sPath,"string")
-    local i = util.Table.find(handle.Path.Paths,_sPath)
+    local i = util.table.find(handle.Path.Paths,_sPath)
     if i
     then
         table.remove(handle.Path.Paths,i)
     end
     return true
-end
-local function protect(Tbl)
-    for _,v in pairs(Tbl) do
-        if type(v) == "table" and not util.Table.selfReferencing(v)
-        then
-            protect(v)
-        elseif type(v) == "function"
-        then
-            debug.protect(v)
-        end
-    end
 end
 
 ---loads up the api
@@ -69,7 +62,7 @@ function handle.require(_sPath,_Env,bReload)
     -- backwards support for require
     -- turns the '.' into "/" then adds
     -- .lua to the end of the string
-    if util.File.getExtension(_sPath) ~= "lua"
+    if util.file.getExtension(_sPath) ~= "lua"
     then
         _sPath = string.gsub(_sPath,"%.","/")..".lua"
     end
