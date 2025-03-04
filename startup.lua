@@ -291,7 +291,7 @@ function _G.term.native()
     end
     if tonumber(string.sub(_VERSION,4)) <= 5.1
     then
-        setfenv(fn,Env)
+        setfenv(bios,Env)
     end
     local reboot = os.reboot
     local oldshutdown = os.shutdown
