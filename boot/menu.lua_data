@@ -1,0 +1,82 @@
+{
+    ["uninstall"] = function ()
+        local centerX,centerY = GUI:getCenter()
+        local newParent = GUI:create(centerX-15,centerY-6,35,10,true)
+        local option = newParent:Prompt("are you sure? once uninstalled you have to reinstall mannually.","do it","hold on")
+        if option
+        then
+            logFile:Close()
+            fs.delete("boot")
+            fs.delete("startup.lua")
+        end
+        HardWare.reboot()
+        while true do
+            coroutine.yield()
+        end
+    end,
+    ["select_default_program"] = function ()
+        local fileselect = require("GUI.fileselect")
+        local centerX,centerY = GUI:getCenter()
+        local newParent = GUI:create(centerX-21,centerY-6,42,10,true)
+        local fileInfo
+        local fm = require("fm")
+        local file_path = fileselect(newParent,"","choose program",true,false,"kern")
+        if not file_path
+        then
+            return
+        end
+        local settings = fs.exists(".settings") and fm.readFile(".settings") or {}
+        settings.default_OS = file_path
+        fm.OverWrite(".settings",settings)
+    end,
+    ["disable_bios"] = function ()
+        local fm = require("fm")
+        local config = fs.exists(".settings") and fm.readFile(".settings") or {}
+        config.customBoot = false
+        fm.OverWrite(".settings",config)
+    end,
+    ["set_delay"] = function ()
+        local fm = require("fm")
+        local centerX,centerY = GUI:getCenter()
+        local newParent = GUI:create(centerX-21,centerY-1,42,3,true)
+        newParent:upDate(true)
+        newParent:make_textBox(true)
+        local new_timer
+        local max_num = 10
+        local min_num = 3
+        local user_timer = newParent:Chat_Prompt("type Time>")
+        new_timer = tonumber(user_timer)
+        if new_timer and (new_timer > 10 or new_timer < 3)
+        then
+            newParent:write("\n")
+            newParent:setTextColor(colors.red)
+            newParent:write(("%d %s %d\nand will not be saved\npress key to exit "):format(new_timer, new_timer > max_num and "greator than" or new_timer < min_num and "less than",new_timer > max_num and max_num or new_timer < min_num and min_num))
+            BIOS.pullEvent("key")
+            return
+        elseif new_timer == nil and user_timer ~= ""
+        then
+            newParent:write("\n")
+            newParent:setTextColor(colors.red)
+            newParent:write(("got something other then a number"):format(type(user_timer)))
+            BIOS.pullEvent("key")
+            return
+        elseif user_timer == ""
+        then
+            return
+        end
+        local settings = fs.exists(".settings") and fm.readFile(".settings") or {}
+        settings.bios_timer = new_timer
+        fm.OverWrite(".settings",settings)
+    end,
+    ["set_pin"] = function ()
+        local fm = require("fm")
+        local centerX,centerY = GUI:getCenter()
+        local newParent = GUI:create(centerX-21,centerY-1,42,3,true)
+        newParent:upDate(true)
+        newParent:make_textBox(true)
+        local pin = newParent:Chat_Prompt("pin>")
+        local settings = fs.exists(".settings") and fm.readFile(".settings") or {}
+        settings.pin = tonumber(pin)
+        fm.OverWrite(".settings",settings)
+    end
+}
